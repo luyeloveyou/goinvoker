@@ -7,6 +7,15 @@ type DispatchContext struct {
 	Params   map[uint64][]Object
 }
 
+func NewDispatchContext() *DispatchContext {
+	return &DispatchContext{
+		Dispatch: make(map[uint64]bool),
+		Selector: make(map[uint64][]string),
+		Result:   make(map[uint64]Object),
+		Params:   make(map[uint64][]Object),
+	}
+}
+
 func (d *DispatchContext) clear(id uint64) {
 	delete(d.Dispatch, id)
 	delete(d.Selector, id)

@@ -1,17 +1,17 @@
 package core
 
 type IHandler interface {
-	Next() Object
+	IRouted
 	Invoke(reqId uint64, result Object, params []Object) Object
 }
 
 type Handler struct {
-	NextRouted Object
+	Routed
 	HandleFunc func(reqId uint64, result Object, params []Object) Object
 }
 
-func (h *Handler) Next() Object {
-	return h.NextRouted
+func NewHandler(handleFunc func(reqId uint64, result Object, params []Object) Object) *Handler {
+	return &Handler{HandleFunc: handleFunc}
 }
 
 func (h *Handler) Invoke(reqId uint64, result Object, params []Object) Object {

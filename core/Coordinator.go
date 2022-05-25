@@ -7,19 +7,24 @@ import (
 )
 
 type ICoordinator interface {
+	IRouted
 	CanDispatch() bool
 	Invoke(reqId uint64, selectors []string, result Object, params []Object) Object
 	Dispatch(reqId uint64, selectors []string, result Object, params []Object)
 }
 
 type Coordinator struct {
+	Routed
 	RootRouted Object
-	NextRouted Object
-	Context    DispatchContext
+	Context    *DispatchContext
+}
+
+func NewCoordinator() *Coordinator {
+	return &Coordinator{Context: NewDispatchContext()}
 }
 
 func (c *Coordinator) CanDispatch() bool {
-	return c.NextRouted != nil
+	return c.Next() != nil
 }
 
 func (c *Coordinator) Invoke(reqId uint64, selectors []string, result Object, params []Object) Object {
@@ -38,7 +43,7 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result Object, pa
 		s := c.Context.getSelector(reqId)
 		p := c.Context.getParams(reqId)
 		c.Context.clear(reqId)
-		tempResult = helper(c.NextRouted, reqId, s, tempResult, p)
+		tempResult = helper(c.Next(), reqId, s, tempResult, p)
 	}
 	return tempResult
 }
@@ -74,6 +79,7 @@ func helper(routed Object, reqId uint64, selectors []string, result Object, para
 			var coordinator = routed.(ICoordinator)
 			subSelectors := selectors[index:]
 			tempResult = coordinator.Invoke(reqId, subSelectors, tempResult, params)
+			routed = nil
 		default:
 			panic(fmt.Sprintf("错误的类型: %T", routed))
 		}
