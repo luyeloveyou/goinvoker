@@ -6,61 +6,45 @@ import (
 )
 
 func main() {
-	var fish = &Fish{
-		Name:     "fish",
-		SwimFlag: false,
+	system := produce("test")
+	result := system.Invoke(0, []string{"test", "1.1.0"}, nil, nil)
+	fmt.Println(result)
+}
+
+func produce(name string) *core.Coordinator {
+	root := core.NewRouter()
+	d1 := core.NewVersionRouter()
+	d2 := core.NewRouter()
+	d3 := core.NewVersionRouter()
+	s1 := &core.Handler{
+		HandleFunc: func(reqId uint64, result core.Object, params []core.Object) core.Object {
+			v := "hello"
+			fmt.Println("--------")
+			fmt.Println(v)
+			fmt.Println("--------")
+			return v
+		},
 	}
-	test := call(fish)
-	fish.Name = "fff"
-	fmt.Println(test)
-	var dog = &Dog{
-		Name:    "doggy",
-		RunFlag: false,
+	s2 := &core.Handler{HandleFunc: func(reqId uint64, result core.Object, params []core.Object) core.Object {
+		v := fmt.Sprintf("%v world", result)
+		fmt.Println("--------")
+		fmt.Println(v)
+		fmt.Println("--------")
+		return v
+	}}
+	system := &core.Coordinator{
+		RootRouted: root,
+		Context: core.DispatchContext{
+			Dispatch: make(map[uint64]bool),
+			Selector: make(map[uint64][]string),
+			Result:   make(map[uint64]core.Object),
+			Params:   make(map[uint64][]core.Object),
+		},
 	}
-	dog.Name = "ddd"
-	test = call(dog)
-	fmt.Println(test)
-
-	fmt.Println(fish)
-	fmt.Println(dog)
-}
-
-func call(object core.Object) core.Object {
-	switch object.(type) {
-	case Swimable:
-		var s = object.(Swimable)
-		s.Swim()
-	case Runnable:
-		var s = object.(Runnable)
-		s.Run()
-	}
-	return object
-}
-
-type Swimable interface {
-	Swim()
-}
-
-type Runnable interface {
-	Run()
-}
-
-type Fish struct {
-	Name     string
-	SwimFlag bool
-}
-
-type Dog struct {
-	Name    string
-	RunFlag bool
-}
-
-func (f *Fish) Swim() {
-	f.SwimFlag = true
-	fmt.Println("swim")
-}
-
-func (d *Dog) Run() {
-	d.RunFlag = true
-	fmt.Println("run")
+	root.Add(name, d1)
+	d1.Add("0.0.2", s1)
+	s1.NextRouted = d2
+	d2.Add(name, d3)
+	d3.Add("1.0.0", s2)
+	return system
 }
