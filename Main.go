@@ -10,19 +10,22 @@ func main() {
 		Name:     "fish",
 		SwimFlag: false,
 	}
-	call(fish)
-
+	test := call(fish)
+	fish.Name = "fff"
+	fmt.Println(test)
 	var dog = &Dog{
 		Name:    "doggy",
 		RunFlag: false,
 	}
-	call(dog)
+	dog.Name = "ddd"
+	test = call(dog)
+	fmt.Println(test)
 
 	fmt.Println(fish)
 	fmt.Println(dog)
 }
 
-func call(object core.Object) {
+func call(object core.Object) core.Object {
 	switch object.(type) {
 	case Swimable:
 		var s = object.(Swimable)
@@ -31,6 +34,7 @@ func call(object core.Object) {
 		var s = object.(Runnable)
 		s.Run()
 	}
+	return object
 }
 
 type Swimable interface {

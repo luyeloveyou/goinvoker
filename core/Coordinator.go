@@ -7,49 +7,50 @@ import (
 )
 
 type ICoordinator interface {
-	Root() Object
-	Next() Object
 	CanDispatch() bool
-	Invoke(reqId uint64, selectors []string, result *Object, params []*Object) *Object
-	Dispatch(reqId uint64, selectors []string, result *Object, params []*Object) *Object
+	Invoke(reqId uint64, selectors []string, result Object, params []Object) Object
+	Dispatch(reqId uint64, selectors []string, result Object, params []Object)
 }
 
 type Coordinator struct {
-	RootRouted *Object
-	NextRouted *Object
+	RootRouted Object
+	NextRouted Object
 	Context    DispatchContext
 }
 
-func (c *Coordinator) Next() Object {
-	return c.NextRouted
-}
-
-func (c *Coordinator) Root() Object {
-	return c.RootRouted
-}
-
 func (c *Coordinator) CanDispatch() bool {
-	return c.Next() != nil
+	return c.NextRouted != nil
 }
 
-func (c *Coordinator) Invoke(reqId uint64, selectors []string, result *Object, params []*Object) *Object {
+func (c *Coordinator) Invoke(reqId uint64, selectors []string, result Object, params []Object) Object {
 	if c.RootRouted == nil {
 		panic("当前函数簇为nil")
 	}
-	rand.Seed(time.Now().Unix())
 	if reqId == 0 {
+		rand.Seed(time.Now().Unix())
 		reqId = rand.Uint64()
 	}
 	tempResult := helper(c.RootRouted, reqId, selectors, result, params)
+	if c.Context.getDispatch(reqId) && c.CanDispatch() {
+		if c.Context.getResult(reqId) != nil {
+			tempResult = c.Context.getResult(reqId)
+		}
+		s := c.Context.getSelector(reqId)
+		p := c.Context.getParams(reqId)
+		c.Context.clear(reqId)
+		tempResult = helper(c.NextRouted, reqId, s, tempResult, p)
+	}
 	return tempResult
 }
 
-func (c *Coordinator) Dispatch(reqId uint64, selectors []string, result *Object, params []*Object) *Object {
-	//TODO implement me
-	panic("implement me")
+func (c *Coordinator) Dispatch(reqId uint64, selectors []string, result Object, params []Object) {
+	c.Context.setDispatch(reqId, true)
+	c.Context.setSelector(reqId, selectors)
+	c.Context.setParams(reqId, params)
+	c.Context.setResult(reqId, result)
 }
 
-func helper(routed Object, reqId uint64, selectors []string, result *Object, params []*Object) *Object {
+func helper(routed Object, reqId uint64, selectors []string, result Object, params []Object) Object {
 	tempResult := result
 	index := 0
 	for routed != nil {
