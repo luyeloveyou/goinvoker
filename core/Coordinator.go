@@ -9,13 +9,13 @@ import (
 type ICoordinator interface {
 	IRouted
 	CanDispatch() bool
-	Invoke(reqId uint64, selectors []string, result Object, params []Object) Object
-	Dispatch(reqId uint64, selectors []string, result Object, params []Object)
+	Invoke(reqId uint64, selectors []string, result any, params []any) any
+	Dispatch(reqId uint64, selectors []string, result any, params []any)
 }
 
 type Coordinator struct {
 	Routed
-	RootRouted Object
+	RootRouted any
 	Context    *DispatchContext
 }
 
@@ -27,7 +27,7 @@ func (c *Coordinator) CanDispatch() bool {
 	return c.Next() != nil
 }
 
-func (c *Coordinator) Invoke(reqId uint64, selectors []string, result Object, params []Object) Object {
+func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, params []any) any {
 	if c.RootRouted == nil {
 		panic("当前函数簇为nil")
 	}
@@ -48,14 +48,14 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result Object, pa
 	return tempResult
 }
 
-func (c *Coordinator) Dispatch(reqId uint64, selectors []string, result Object, params []Object) {
+func (c *Coordinator) Dispatch(reqId uint64, selectors []string, result any, params []any) {
 	c.Context.setDispatch(reqId, true)
 	c.Context.setSelector(reqId, selectors)
 	c.Context.setParams(reqId, params)
 	c.Context.setResult(reqId, result)
 }
 
-func helper(routed Object, reqId uint64, selectors []string, result Object, params []Object) Object {
+func helper(routed any, reqId uint64, selectors []string, result any, params []any) any {
 	tempResult := result
 	index := 0
 	for routed != nil {

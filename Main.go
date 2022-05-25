@@ -1,18 +1,23 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"goinvoker/core"
 )
 
 func main() {
-	system := produce("test")
-	system1 := produce("test")
-	system.NextRouted = system1
-	fmt.Println(system.Next())
-	system.Dispatch(1234, []string{"test", "1.1.0"}, nil, nil)
-	result := system.Invoke(1234, []string{"test", "1.1.0"}, nil, nil)
-	fmt.Println(result)
+	value := context.WithValue(context.Background(), "123", "456")
+	v2 := context.WithValue(value, "asd", "zxc")
+	go test(v2, "asd")
+	<-v2.Done()
+	fmt.Println(v2.Value("asd"))
+	//system := produce("test")
+	//system1 := produce("test")
+	//system.NextRouted = system1
+	//system.Dispatch(1234, []string{"test", "1.1.0"}, nil, nil)
+	//result := system.Invoke(1234, []string{"test", "1.1.0"}, nil, nil)
+	//fmt.Println(result)
 }
 
 func produce(name string) *core.Coordinator {
@@ -20,7 +25,7 @@ func produce(name string) *core.Coordinator {
 	d1 := core.NewVersionRouter()
 	d2 := core.NewRouter()
 	d3 := core.NewVersionRouter()
-	s1 := core.NewHandler(func(reqId uint64, result core.Object, params []core.Object) core.Object {
+	s1 := core.NewHandler(func(reqId uint64, result any, params []any) any {
 		var v string
 		if result != nil {
 			v = fmt.Sprintf("hello %v", result)
@@ -32,7 +37,7 @@ func produce(name string) *core.Coordinator {
 		fmt.Println("--------")
 		return v
 	})
-	s2 := core.NewHandler(func(reqId uint64, result core.Object, params []core.Object) core.Object {
+	s2 := core.NewHandler(func(reqId uint64, result any, params []any) any {
 		v := fmt.Sprintf("%v world", result)
 		fmt.Println("--------")
 		fmt.Println(v)

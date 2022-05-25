@@ -5,39 +5,39 @@ import (
 )
 
 type IRouter interface {
-	Route(selector string) Object
-	Add(selector string, routed Object)
+	Route(selector string) any
+	Add(selector string, routed any)
 }
 
 type Router struct {
-	cache map[string]Object
+	cache map[string]any
 }
 
 func NewRouter() *Router {
-	return &Router{cache: make(map[string]Object)}
+	return &Router{cache: make(map[string]any)}
 }
 
 type VersionRouter struct {
-	cache map[string]Object
+	cache map[string]any
 	keys  []string
 }
 
 func NewVersionRouter() *VersionRouter {
 	return &VersionRouter{
-		cache: make(map[string]Object),
+		cache: make(map[string]any),
 		keys:  []string{},
 	}
 }
 
-func (r *Router) Route(selector string) Object {
+func (r *Router) Route(selector string) any {
 	return r.cache[selector]
 }
 
-func (r *Router) Add(selector string, routed Object) {
+func (r *Router) Add(selector string, routed any) {
 	r.cache[selector] = routed
 }
 
-func (vr *VersionRouter) Add(selector string, routed Object) {
+func (vr *VersionRouter) Add(selector string, routed any) {
 	vr.keys = append(vr.keys, selector)
 	sort.Slice(vr.keys, func(i, j int) bool {
 		if versionCompare(vr.keys[i], vr.keys[j]) < 0 {
@@ -48,7 +48,7 @@ func (vr *VersionRouter) Add(selector string, routed Object) {
 	vr.cache[selector] = routed
 }
 
-func (vr *VersionRouter) Route(selector string) Object {
+func (vr *VersionRouter) Route(selector string) any {
 	search := sort.Search(len(vr.keys), func(i int) bool {
 		return versionCompare(vr.keys[i], selector) >= 0
 	}) - 1

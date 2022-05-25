@@ -1,13 +1,13 @@
 package core
 
 type IRouted interface {
-	Next() Object
+	Next() any
 }
 
 type Routed struct {
-	NextRouted Object
+	NextRouted any
 }
 
-func (r *Routed) Next() Object {
+func (r *Routed) Next() any {
 	return r.NextRouted
 }

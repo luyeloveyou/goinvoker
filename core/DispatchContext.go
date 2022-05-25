@@ -3,16 +3,16 @@ package core
 type DispatchContext struct {
 	Dispatch map[uint64]bool
 	Selector map[uint64][]string
-	Result   map[uint64]Object
-	Params   map[uint64][]Object
+	Result   map[uint64]any
+	Params   map[uint64][]any
 }
 
 func NewDispatchContext() *DispatchContext {
 	return &DispatchContext{
 		Dispatch: make(map[uint64]bool),
 		Selector: make(map[uint64][]string),
-		Result:   make(map[uint64]Object),
-		Params:   make(map[uint64][]Object),
+		Result:   make(map[uint64]any),
+		Params:   make(map[uint64][]any),
 	}
 }
 
@@ -50,7 +50,7 @@ func (d *DispatchContext) setSelector(id uint64, selector []string) {
 	d.Selector[id] = selector
 }
 
-func (d *DispatchContext) getResult(id uint64) Object {
+func (d *DispatchContext) getResult(id uint64) any {
 	v, ok := d.Result[id]
 	if ok {
 		return v
@@ -59,11 +59,11 @@ func (d *DispatchContext) getResult(id uint64) Object {
 	}
 }
 
-func (d *DispatchContext) setResult(id uint64, result Object) {
+func (d *DispatchContext) setResult(id uint64, result any) {
 	d.Result[id] = result
 }
 
-func (d *DispatchContext) getParams(id uint64) []Object {
+func (d *DispatchContext) getParams(id uint64) []any {
 	v, ok := d.Params[id]
 	if ok {
 		return v
@@ -72,6 +72,6 @@ func (d *DispatchContext) getParams(id uint64) []Object {
 	}
 }
 
-func (d *DispatchContext) setParams(id uint64, params []Object) {
+func (d *DispatchContext) setParams(id uint64, params []any) {
 	d.Params[id] = params
 }
