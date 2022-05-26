@@ -6,12 +6,15 @@ type IHandler interface {
 }
 
 type Handler struct {
-	Routed
+	*Routed
 	HandleFunc func(reqId uint64, result any, params []any) any
 }
 
 func NewHandler(handleFunc func(reqId uint64, result any, params []any) any) *Handler {
-	return &Handler{HandleFunc: handleFunc}
+	return &Handler{
+		Routed:     &Routed{},
+		HandleFunc: handleFunc,
+	}
 }
 
 func (h *Handler) Invoke(reqId uint64, result any, params []any) any {

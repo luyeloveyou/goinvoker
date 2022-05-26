@@ -14,13 +14,17 @@ type ICoordinator interface {
 }
 
 type Coordinator struct {
-	Routed
+	*Routed
 	RootRouted any
 	Context    *DispatchContext
 }
 
 func NewCoordinator() *Coordinator {
-	return &Coordinator{Context: NewDispatchContext()}
+	return &Coordinator{
+		Routed:     &Routed{},
+		RootRouted: nil,
+		Context:    NewDispatchContext(),
+	}
 }
 
 func (c *Coordinator) CanDispatch() bool {

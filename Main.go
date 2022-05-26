@@ -1,23 +1,58 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"goinvoker/core"
 )
 
 func main() {
-	value := context.WithValue(context.Background(), "123", "456")
-	v2 := context.WithValue(value, "asd", "zxc")
-	go test(v2, "asd")
-	<-v2.Done()
-	fmt.Println(v2.Value("asd"))
-	//system := produce("test")
-	//system1 := produce("test")
-	//system.NextRouted = system1
-	//system.Dispatch(1234, []string{"test", "1.1.0"}, nil, nil)
-	//result := system.Invoke(1234, []string{"test", "1.1.0"}, nil, nil)
-	//fmt.Println(result)
+	system := produce("test")
+	system1 := produce("test")
+	system.NextRouted = system1
+	system.Dispatch(1234, []string{"test", "1.1.0"}, nil, nil)
+	result := system.Invoke(1234, []string{"test", "1.1.0"}, nil, nil)
+	fmt.Println(result)
+	//a := &A{Aname: "a"}
+	//var b = &B{
+	//	A:     a,
+	//	Bname: "b",
+	//}
+	//a.Aname = "test"
+	//fmt.Printf("%v\n", b.A)
+	//fmt.Println(a)
+}
+
+type IA interface {
+	AN() string
+}
+
+type A struct {
+	Aname string
+}
+
+type IB interface {
+	IA
+	BN() string
+}
+
+type B struct {
+	*A
+	Bname string
+}
+
+func (a *A) AN() string {
+	a.Aname = "AN"
+	return a.Aname
+}
+
+func (b *B) BN() string {
+	b.Bname = "BN"
+	b.Aname = "BN"
+	return b.Bname
+}
+
+func test(b *B) {
+	b.Aname = "testA"
 }
 
 func produce(name string) *core.Coordinator {
