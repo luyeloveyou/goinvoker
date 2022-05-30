@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"goinvoker/chain/functionchain"
 	"goinvoker/core/coordinator"
 	"goinvoker/core/handler"
 	"goinvoker/core/router"
@@ -14,47 +15,14 @@ func main() {
 	system.Dispatch(1234, []string{"test", "1.1.0"}, nil, nil)
 	result := system.Invoke(1234, []string{"test", "1.1.0"}, nil, nil)
 	fmt.Println(result)
-	//a := &A{Aname: "a"}
-	//var b = &B{
-	//	A:     a,
-	//	Bname: "b",
-	//}
-	//a.Aname = "test"
-	//fmt.Printf("%v\n", b.A)
-	//fmt.Println(a)
 }
 
-type IA interface {
-	AN() string
+type AddFunctionChain struct {
+	*functionchain.FunctionChain
 }
 
-type A struct {
-	Aname string
-}
+func NewAddFunctionChain() *AddFunctionChain {
 
-type IB interface {
-	IA
-	BN() string
-}
-
-type B struct {
-	*A
-	Bname string
-}
-
-func (a *A) AN() string {
-	a.Aname = "AN"
-	return a.Aname
-}
-
-func (b *B) BN() string {
-	b.Bname = "BN"
-	b.Aname = "BN"
-	return b.Bname
-}
-
-func test(b *B) {
-	b.Aname = "testA"
 }
 
 func produce(name string) *coordinator.Coordinator {
