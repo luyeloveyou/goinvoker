@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
-	"goinvoker/core"
+	"goinvoker/core/coordinator"
+	"goinvoker/core/handler"
+	"goinvoker/core/router"
 )
 
 func main() {
@@ -55,12 +57,12 @@ func test(b *B) {
 	b.Aname = "testA"
 }
 
-func produce(name string) *core.Coordinator {
-	root := core.NewRouter()
-	d1 := core.NewVersionRouter()
-	d2 := core.NewRouter()
-	d3 := core.NewVersionRouter()
-	s1 := core.NewHandler(func(reqId uint64, result any, params []any) any {
+func produce(name string) *coordinator.Coordinator {
+	root := router.NewNameRouter()
+	d1 := router.NewVersionRouter()
+	d2 := router.NewNameRouter()
+	d3 := router.NewVersionRouter()
+	s1 := handler.NewHandler(func(reqId uint64, result any, params []any) any {
 		var v string
 		if result != nil {
 			v = fmt.Sprintf("hello %v", result)
@@ -72,14 +74,14 @@ func produce(name string) *core.Coordinator {
 		fmt.Println("--------")
 		return v
 	})
-	s2 := core.NewHandler(func(reqId uint64, result any, params []any) any {
+	s2 := handler.NewHandler(func(reqId uint64, result any, params []any) any {
 		v := fmt.Sprintf("%v world", result)
 		fmt.Println("--------")
 		fmt.Println(v)
 		fmt.Println("--------")
 		return v
 	})
-	system := core.NewCoordinator()
+	system := coordinator.NewCoordinator()
 	system.RootRouted = root
 	root.Add(name, d1)
 	d1.Add("0.0.2", s1)

@@ -1,18 +1,17 @@
-package core
+package handler
 
-type IHandler interface {
-	IRouted
-	Invoke(reqId uint64, result any, params []any) any
-}
+import (
+	"goinvoker/core/routed"
+)
 
 type Handler struct {
-	*Routed
+	*routed.Routed
 	HandleFunc func(reqId uint64, result any, params []any) any
 }
 
 func NewHandler(handleFunc func(reqId uint64, result any, params []any) any) *Handler {
 	return &Handler{
-		Routed:     &Routed{},
+		Routed:     &routed.Routed{},
 		HandleFunc: handleFunc,
 	}
 }

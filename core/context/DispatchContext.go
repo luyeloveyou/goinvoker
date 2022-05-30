@@ -1,4 +1,4 @@
-package core
+package context
 
 type DispatchContext struct {
 	Dispatch map[uint64]bool
@@ -16,7 +16,7 @@ func NewDispatchContext() *DispatchContext {
 	}
 }
 
-func (d *DispatchContext) clear(id uint64) {
+func (d *DispatchContext) Clear(id uint64) {
 	delete(d.Dispatch, id)
 	delete(d.Selector, id)
 	delete(d.Result, id)
@@ -24,7 +24,7 @@ func (d *DispatchContext) clear(id uint64) {
 	delete(d.Params, id)
 }
 
-func (d *DispatchContext) getDispatch(id uint64) bool {
+func (d *DispatchContext) GetDispatch(id uint64) bool {
 	v, ok := d.Dispatch[id]
 	if ok {
 		return v
@@ -33,11 +33,11 @@ func (d *DispatchContext) getDispatch(id uint64) bool {
 	}
 }
 
-func (d *DispatchContext) setDispatch(id uint64, dispatch bool) {
+func (d *DispatchContext) SetDispatch(id uint64, dispatch bool) {
 	d.Dispatch[id] = dispatch
 }
 
-func (d *DispatchContext) getSelector(id uint64) []string {
+func (d *DispatchContext) GetSelector(id uint64) []string {
 	v, ok := d.Selector[id]
 	if ok {
 		return v
@@ -46,11 +46,11 @@ func (d *DispatchContext) getSelector(id uint64) []string {
 	}
 }
 
-func (d *DispatchContext) setSelector(id uint64, selector []string) {
+func (d *DispatchContext) SetSelector(id uint64, selector []string) {
 	d.Selector[id] = selector
 }
 
-func (d *DispatchContext) getResult(id uint64) any {
+func (d *DispatchContext) GetResult(id uint64) any {
 	v, ok := d.Result[id]
 	if ok {
 		return v
@@ -59,11 +59,11 @@ func (d *DispatchContext) getResult(id uint64) any {
 	}
 }
 
-func (d *DispatchContext) setResult(id uint64, result any) {
+func (d *DispatchContext) SetResult(id uint64, result any) {
 	d.Result[id] = result
 }
 
-func (d *DispatchContext) getParams(id uint64) []any {
+func (d *DispatchContext) GetParams(id uint64) []any {
 	v, ok := d.Params[id]
 	if ok {
 		return v
@@ -72,6 +72,6 @@ func (d *DispatchContext) getParams(id uint64) []any {
 	}
 }
 
-func (d *DispatchContext) setParams(id uint64, params []any) {
+func (d *DispatchContext) SetParams(id uint64, params []any) {
 	d.Params[id] = params
 }

@@ -1,21 +1,6 @@
-package core
+package router
 
-import (
-	"sort"
-)
-
-type IRouter interface {
-	Route(selector string) any
-	Add(selector string, routed any)
-}
-
-type Router struct {
-	cache map[string]any
-}
-
-func NewRouter() *Router {
-	return &Router{cache: make(map[string]any)}
-}
+import "sort"
 
 type VersionRouter struct {
 	cache map[string]any
@@ -27,14 +12,6 @@ func NewVersionRouter() *VersionRouter {
 		cache: make(map[string]any),
 		keys:  []string{},
 	}
-}
-
-func (r *Router) Route(selector string) any {
-	return r.cache[selector]
-}
-
-func (r *Router) Add(selector string, routed any) {
-	r.cache[selector] = routed
 }
 
 func (vr *VersionRouter) Add(selector string, routed any) {

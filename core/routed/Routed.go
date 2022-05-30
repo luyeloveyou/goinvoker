@@ -1,8 +1,4 @@
-package core
-
-type IRouted interface {
-	Next() any
-}
+package routed
 
 type Routed struct {
 	NextRouted any

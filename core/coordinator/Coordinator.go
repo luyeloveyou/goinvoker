@@ -1,29 +1,25 @@
-package core
+package coordinator
 
 import (
 	"fmt"
+	"goinvoker/core"
+	"goinvoker/core/context"
+	"goinvoker/core/routed"
 	"math/rand"
 	"time"
 )
 
-type ICoordinator interface {
-	IRouted
-	CanDispatch() bool
-	Invoke(reqId uint64, selectors []string, result any, params []any) any
-	Dispatch(reqId uint64, selectors []string, result any, params []any)
-}
-
 type Coordinator struct {
-	*Routed
+	*routed.Routed
 	RootRouted any
-	Context    *DispatchContext
+	Context    *context.DispatchContext
 }
 
 func NewCoordinator() *Coordinator {
 	return &Coordinator{
-		Routed:     &Routed{},
+		Routed:     &routed.Routed{},
 		RootRouted: nil,
-		Context:    NewDispatchContext(),
+		Context:    context.NewDispatchContext(),
 	}
 }
 
@@ -40,49 +36,46 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 		reqId = rand.Uint64()
 	}
 	tempResult := helper(c.RootRouted, reqId, selectors, result, params)
-	if c.Context.getDispatch(reqId) && c.CanDispatch() {
-		if c.Context.getResult(reqId) != nil {
-			tempResult = c.Context.getResult(reqId)
+	if c.Context.GetDispatch(reqId) && c.CanDispatch() {
+		if c.Context.GetResult(reqId) != nil {
+			tempResult = c.Context.GetResult(reqId)
 		}
-		s := c.Context.getSelector(reqId)
-		p := c.Context.getParams(reqId)
-		c.Context.clear(reqId)
+		s := c.Context.GetSelector(reqId)
+		p := c.Context.GetParams(reqId)
+		c.Context.Clear(reqId)
 		tempResult = helper(c.Next(), reqId, s, tempResult, p)
 	}
 	return tempResult
 }
 
 func (c *Coordinator) Dispatch(reqId uint64, selectors []string, result any, params []any) {
-	c.Context.setDispatch(reqId, true)
-	c.Context.setSelector(reqId, selectors)
-	c.Context.setParams(reqId, params)
-	c.Context.setResult(reqId, result)
+	c.Context.SetDispatch(reqId, true)
+	c.Context.SetSelector(reqId, selectors)
+	c.Context.SetParams(reqId, params)
+	c.Context.SetResult(reqId, result)
 }
 
 func helper(routed any, reqId uint64, selectors []string, result any, params []any) any {
 	tempResult := result
 	index := 0
 	for routed != nil {
-		switch routed.(type) {
-		case IRouter:
-			var router = routed.(IRouter)
+		switch r := routed.(type) {
+		case core.IRouter:
 			if index < len(selectors) {
-				routed = router.Route(selectors[index])
+				routed = r.Route(selectors[index])
 			} else {
 				panic(fmt.Sprintf("选择子数量 %d 错误", len(selectors)))
 			}
 			if index+1 < len(selectors) {
 				index++
 			}
-		case IHandler:
-			var handler = routed.(IHandler)
-			tempResult = handler.Invoke(reqId, tempResult, params)
+		case core.IHandler:
+			tempResult = r.Invoke(reqId, tempResult, params)
 			index = 0
-			routed = handler.Next()
-		case ICoordinator:
-			var coordinator = routed.(ICoordinator)
+			routed = r.Next()
+		case core.ICoordinator:
 			subSelectors := selectors[index:]
-			tempResult = coordinator.Invoke(reqId, subSelectors, tempResult, params)
+			tempResult = r.Invoke(reqId, subSelectors, tempResult, params)
 			routed = nil
 		default:
 			panic(fmt.Sprintf("错误的类型: %T", routed))
