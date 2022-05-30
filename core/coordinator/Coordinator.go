@@ -41,6 +41,9 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 			tempResult = c.Context.GetResult(reqId)
 		}
 		s := c.Context.GetSelector(reqId)
+		if s == nil {
+			s = selectors
+		}
 		p := c.Context.GetParams(reqId)
 		c.Context.Clear(reqId)
 		tempResult = helper(c.Next(), reqId, s, tempResult, p)

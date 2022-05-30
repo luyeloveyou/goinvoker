@@ -15,6 +15,7 @@ func NewFunctionChain() *FunctionChain {
 	functionChain := &FunctionChain{
 		Coordinator: coordinator.NewCoordinator(),
 	}
+	functionChain.RootRouted = router.NewNameRouter()
 	return functionChain
 }
 
@@ -36,4 +37,8 @@ func (f *FunctionChain) Add(funcName, version string, handler core.IHandler) {
 		panic(fmt.Sprintf("名称路由器的路由结果类型 %T 不是版本路由器", routed))
 	}
 	versionRouter.Add(version, handler)
+}
+
+func (f *FunctionChain) AutoDispatch(reqId uint64, result any, params []any) {
+	f.Dispatch(reqId, nil, result, params)
 }

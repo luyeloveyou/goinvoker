@@ -3,26 +3,47 @@ package main
 import (
 	"fmt"
 	"goinvoker/chain/functionchain"
+	"goinvoker/chain/table"
 	"goinvoker/core/coordinator"
 	"goinvoker/core/handler"
 	"goinvoker/core/router"
 )
 
 func main() {
-	system := produce("test")
-	system1 := produce("test")
-	system.NextRouted = system1
-	system.Dispatch(1234, []string{"test", "1.1.0"}, nil, nil)
-	result := system.Invoke(1234, []string{"test", "1.1.0"}, nil, nil)
-	fmt.Println(result)
+	validChain := functionchain.NewFunctionChain()
+	addChain := functionchain.NewFunctionChain()
+	addTable := functionchain.NewFunctionTable()
+	addLib := table.NewLibTable()
+	addInvoker := table.NewInvokerTable()
+	validChain.Add("add", "1.0.0", handler.NewHandler(func(reqId uint64, result any, params []any) any {
+		if valid(params[0].(int), params[1].(int)) {
+			validChain.Dispatch(reqId, nil, result, params)
+		} else {
+			fmt.Println("error")
+		}
+		return 0
+	}))
+	addChain.Add("add", "0.0.0", handler.NewHandler(func(reqId uint64, result any, params []any) any {
+		return add(params[0].(int), params[1].(int))
+	}))
+	validChain.NextRouted = addChain
+	addTable.RootChain = validChain
+	addLib.Add("add", addTable)
+	addInvoker.Add("add", addLib)
+	call := addInvoker.Call("add", "add", "add", "1.1.0", 1, -2)
+	fmt.Println(call)
 }
 
-type AddFunctionChain struct {
-	*functionchain.FunctionChain
+func valid(a, b int) bool {
+	if a < 0 || b < 0 {
+		return false
+	} else {
+		return true
+	}
 }
 
-func NewAddFunctionChain() *AddFunctionChain {
-
+func add(a, b int) int {
+	return a + b
 }
 
 func produce(name string) *coordinator.Coordinator {

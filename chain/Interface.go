@@ -7,6 +7,7 @@ import (
 type IFunctionChain interface {
 	core.ICoordinator
 	Add(funcName, version string, handler core.IHandler)
+	AutoDispatch(reqId uint64, result any, params []any)
 }
 
 type IFunctionTable interface {
