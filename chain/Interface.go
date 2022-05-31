@@ -1,8 +1,6 @@
 package chain
 
-import (
-	"goinvoker/core"
-)
+import "github.com/luyeloveyou/goinvoker/core"
 
 type IFunctionChain interface {
 	core.ICoordinator

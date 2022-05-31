@@ -1,7 +1,7 @@
 package functionchain
 
 import (
-	"goinvoker/chain"
+	"github.com/luyeloveyou/goinvoker/chain"
 )
 
 type FunctionTable struct {

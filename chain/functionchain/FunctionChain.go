@@ -1,9 +1,9 @@
 package functionchain
 
 import (
-	"goinvoker/core"
-	"goinvoker/core/coordinator"
-	"goinvoker/core/router"
+	"github.com/luyeloveyou/goinvoker/core"
+	"github.com/luyeloveyou/goinvoker/core/coordinator"
+	"github.com/luyeloveyou/goinvoker/core/router"
 )
 
 type FunctionChain struct {

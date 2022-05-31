@@ -1,8 +1,6 @@
 package handler
 
-import (
-	"goinvoker/core/routed"
-)
+import "github.com/luyeloveyou/goinvoker/core/routed"
 
 type Handler struct {
 	*routed.Routed

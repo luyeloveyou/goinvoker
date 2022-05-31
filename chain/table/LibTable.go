@@ -1,10 +1,10 @@
 package table
 
 import (
-	"goinvoker/chain"
-	"goinvoker/chain/functionchain"
-	"goinvoker/core/coordinator"
-	"goinvoker/core/router"
+	"github.com/luyeloveyou/goinvoker/chain"
+	"github.com/luyeloveyou/goinvoker/chain/functionchain"
+	"github.com/luyeloveyou/goinvoker/core/coordinator"
+	"github.com/luyeloveyou/goinvoker/core/router"
 )
 
 type LibTable struct {

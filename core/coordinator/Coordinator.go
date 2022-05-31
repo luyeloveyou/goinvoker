@@ -2,9 +2,9 @@ package coordinator
 
 import (
 	"fmt"
-	"goinvoker/core"
-	"goinvoker/core/context"
-	"goinvoker/core/routed"
+	"github.com/luyeloveyou/goinvoker/core"
+	"github.com/luyeloveyou/goinvoker/core/context"
+	"github.com/luyeloveyou/goinvoker/core/routed"
 	"math/rand"
 	"time"
 )
