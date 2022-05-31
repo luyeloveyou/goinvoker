@@ -39,6 +39,14 @@ func (f *FunctionChain) Add(funcName, version string, handler core.IHandler) {
 	versionRouter.Add(version, handler)
 }
 
-func (f *FunctionChain) AutoDispatch(reqId uint64, result any, params []any) {
-	f.Dispatch(reqId, nil, result, params)
+func DispatchIdRP(reqId uint64, result any, params []any) {
+	coordinator.Dispatch(reqId, nil, result, params)
+}
+
+func DispatchIdR(reqId uint64, result any) {
+	DispatchIdRP(reqId, result, nil)
+}
+
+func DispatchId(reqId uint64) {
+	DispatchIdR(reqId, nil)
 }

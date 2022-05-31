@@ -13,7 +13,6 @@ type ICoordinator interface {
 	IRouted
 	CanDispatch() bool
 	Invoke(reqId uint64, selectors []string, result any, params []any) any
-	Dispatch(reqId uint64, selectors []string, result any, params []any)
 }
 
 type IHandler interface {

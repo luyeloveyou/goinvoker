@@ -1,77 +1,74 @@
 package context
 
+var (
+	dispatch = "DISPATCH"
+	selector = "SELECTOR"
+	result   = "RESULT"
+	params   = "PARAMS"
+)
+
 type DispatchContext struct {
-	Dispatch map[uint64]bool
-	Selector map[uint64][]string
-	Result   map[uint64]any
-	Params   map[uint64][]any
+	cache *GlobalMapContext
 }
 
 func NewDispatchContext() *DispatchContext {
 	return &DispatchContext{
-		Dispatch: make(map[uint64]bool),
-		Selector: make(map[uint64][]string),
-		Result:   make(map[uint64]any),
-		Params:   make(map[uint64][]any),
+		NewGlobalMapContext(),
 	}
 }
 
 func (d *DispatchContext) Clear(id uint64) {
-	delete(d.Dispatch, id)
-	delete(d.Selector, id)
-	delete(d.Result, id)
-	delete(d.Result, id)
-	delete(d.Params, id)
+	d.cache.Clear(id)
+}
+
+func get(d *DispatchContext, id uint64, key any) any {
+	v, ok := d.cache.Get(id, key)
+	if ok {
+		return v
+	}
+	return nil
 }
 
 func (d *DispatchContext) GetDispatch(id uint64) bool {
-	v, ok := d.Dispatch[id]
-	if ok {
-		return v
-	} else {
+	v := get(d, id, dispatch)
+	if v == nil {
 		return false
 	}
+	return v.(bool)
 }
 
-func (d *DispatchContext) SetDispatch(id uint64, dispatch bool) {
-	d.Dispatch[id] = dispatch
+func (d *DispatchContext) SetDispatch(id uint64, value bool) {
+	d.cache.Set(id, dispatch, value)
 }
 
 func (d *DispatchContext) GetSelector(id uint64) []string {
-	v, ok := d.Selector[id]
-	if ok {
-		return v
-	} else {
+	v := get(d, id, selector)
+	if v == nil {
 		return nil
 	}
+	return v.([]string)
 }
 
-func (d *DispatchContext) SetSelector(id uint64, selector []string) {
-	d.Selector[id] = selector
+func (d *DispatchContext) SetSelector(id uint64, value []string) {
+	d.cache.Set(id, selector, value)
 }
 
 func (d *DispatchContext) GetResult(id uint64) any {
-	v, ok := d.Result[id]
-	if ok {
-		return v
-	} else {
-		return nil
-	}
+	return get(d, id, result)
 }
 
-func (d *DispatchContext) SetResult(id uint64, result any) {
-	d.Result[id] = result
+func (d *DispatchContext) SetResult(id uint64, value any) {
+	d.cache.Set(id, result, value)
 }
 
 func (d *DispatchContext) GetParams(id uint64) []any {
-	v, ok := d.Params[id]
-	if ok {
-		return v
-	} else {
+	v := get(d, id, params)
+	if v == nil {
 		return nil
 	}
+	return v.([]any)
 }
 
-func (d *DispatchContext) SetParams(id uint64, params []any) {
-	d.Params[id] = params
+func (d *DispatchContext) SetParams(id uint64, value []any) {
+	d.cache.Set(id, params, value)
 }

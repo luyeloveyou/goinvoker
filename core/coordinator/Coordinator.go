@@ -9,17 +9,17 @@ import (
 	"time"
 )
 
+var dispatchContext = context.NewDispatchContext()
+
 type Coordinator struct {
 	*routed.Routed
 	RootRouted any
-	Context    *context.DispatchContext
 }
 
 func NewCoordinator() *Coordinator {
 	return &Coordinator{
 		Routed:     &routed.Routed{},
 		RootRouted: nil,
-		Context:    context.NewDispatchContext(),
 	}
 }
 
@@ -36,26 +36,29 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 		reqId = rand.Uint64()
 	}
 	tempResult := helper(c.RootRouted, reqId, selectors, result, params)
-	if c.Context.GetDispatch(reqId) && c.CanDispatch() {
-		if c.Context.GetResult(reqId) != nil {
-			tempResult = c.Context.GetResult(reqId)
+	if dispatchContext.GetDispatch(reqId) && c.CanDispatch() {
+		if dispatchContext.GetResult(reqId) != nil {
+			tempResult = dispatchContext.GetResult(reqId)
 		}
-		s := c.Context.GetSelector(reqId)
+		s := dispatchContext.GetSelector(reqId)
 		if s == nil {
 			s = selectors
 		}
-		p := c.Context.GetParams(reqId)
-		c.Context.Clear(reqId)
+		p := dispatchContext.GetParams(reqId)
+		if p == nil {
+			p = params
+		}
+		dispatchContext.Clear(reqId)
 		tempResult = helper(c.Next(), reqId, s, tempResult, p)
 	}
 	return tempResult
 }
 
-func (c *Coordinator) Dispatch(reqId uint64, selectors []string, result any, params []any) {
-	c.Context.SetDispatch(reqId, true)
-	c.Context.SetSelector(reqId, selectors)
-	c.Context.SetParams(reqId, params)
-	c.Context.SetResult(reqId, result)
+func Dispatch(reqId uint64, selectors []string, result any, params []any) {
+	dispatchContext.SetDispatch(reqId, true)
+	dispatchContext.SetSelector(reqId, selectors)
+	dispatchContext.SetParams(reqId, params)
+	dispatchContext.SetResult(reqId, result)
 }
 
 func helper(routed any, reqId uint64, selectors []string, result any, params []any) any {
