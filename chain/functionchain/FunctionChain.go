@@ -6,19 +6,19 @@ import (
 	"goinvoker/core/router"
 )
 
-type functionChain struct {
+type FunctionChain struct {
 	*coordinator.Coordinator
 }
 
-func NewFunctionChain() *functionChain {
-	functionChain := &functionChain{
+func NewFunctionChain() *FunctionChain {
+	functionChain := &FunctionChain{
 		Coordinator: coordinator.NewCoordinator(),
 	}
 	functionChain.RootRouted = router.NewNameRouter()
 	return functionChain
 }
 
-func (f *functionChain) Add(funcName, version string, handler core.IHandler) bool {
+func (f *FunctionChain) Add(funcName, version string, handler core.IHandler) bool {
 	if f.RootRouted == nil {
 		return false
 	}

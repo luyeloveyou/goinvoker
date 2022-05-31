@@ -21,5 +21,6 @@ type ILibTable interface {
 type IInvokerTable interface {
 	core.ICoordinator
 	Add(invokerName string, table ILibTable) bool
+	SetUp(invokerName, libName, funcName, version string, handler ...core.IHandler) bool
 	Call(invokerName, libName, funcName, version string, params ...any) (any, bool, error)
 }

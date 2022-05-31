@@ -8,7 +8,36 @@ import (
 )
 
 func main() {
-	testFunctionChain()
+	testSetup()
+}
+
+func testSetup() {
+	invokerTable := table.NewInvokerTable()
+	invokerTable.SetUp("add", "addLib", "addFunc", "0.1.0", handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
+		if !valid(params[0].(int), params[1].(int)) {
+			fmt.Println("error")
+		}
+		functionchain.DispatchId(reqId)
+		return 0, nil
+	}),
+		handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
+			return add(params[0].(int), params[1].(int)), nil
+		}),
+	)
+
+	invokerTable.SetUp("add", "addLib", "addFunc", "1.1.0", handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
+		if !valid(params[0].(int), params[1].(int)) {
+			fmt.Println("error1")
+		}
+		functionchain.DispatchId(reqId)
+		return 0, nil
+	}),
+		handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
+			return add(params[0].(int), params[1].(int)) - 10, nil
+		}),
+	)
+	call, b, err := invokerTable.Call("add", "addLib", "addFunc", "0.0.0", 1, -2)
+	fmt.Println(call, b, err)
 }
 
 func testFunctionChain() {

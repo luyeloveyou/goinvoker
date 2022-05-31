@@ -4,15 +4,15 @@ import (
 	"goinvoker/chain"
 )
 
-type functionTable struct {
+type FunctionTable struct {
 	RootChain chain.IFunctionChain
 }
 
-func NewFunctionTable() *functionTable {
-	return &functionTable{}
+func NewFunctionTable() *FunctionTable {
+	return &FunctionTable{}
 }
 
-func (f *functionTable) Chain() (chain.IFunctionChain, bool) {
+func (f *FunctionTable) Chain() (chain.IFunctionChain, bool) {
 	if f.RootChain == nil {
 		return nil, false
 	}
