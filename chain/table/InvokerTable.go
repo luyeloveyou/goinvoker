@@ -5,6 +5,7 @@ import (
 	"goinvoker/chain/functionchain"
 	"goinvoker/core"
 	"goinvoker/core/coordinator"
+	"goinvoker/core/handler"
 	"goinvoker/core/router"
 )
 
@@ -30,43 +31,88 @@ func (i *InvokerTable) Add(invokerName string, table chain.ILibTable) bool {
 	return true
 }
 
-func (i *InvokerTable) SetUp(invokerName, libName, funcName, version string, handler ...core.IHandler) bool {
+func (i *InvokerTable) AddIfAbsent(invokerName string) (chain.ILibTable, bool) {
 	if i.RootRouted == nil {
-		return false
+		return nil, false
 	}
 	nameRouter, ok := i.RootRouted.(core.IRouter)
 	if !ok {
-		return false
+		return nil, false
 	}
 	temp, ok := nameRouter.Route(invokerName)
 	if !ok {
 		temp = NewLibTable()
 		nameRouter.Add(invokerName, temp)
 	}
-	lt := temp.(*LibTable)
-	if lt.Tables == nil {
+	lt := temp.(chain.ILibTable)
+	return lt, true
+}
+
+func (i *InvokerTable) SetUpAppend(invokerName, libName, funcName, version string, hs ...func(reqId uint64, result any, params []any) (any, error)) bool {
+	temp, ok := i.AddIfAbsent(invokerName)
+	if !ok {
 		return false
 	}
-	ft, ok := lt.Tables[libName]
+	lt := temp.(*LibTable)
+
+	ft, ok := lt.AddIfAbsent(libName)
 	if !ok {
-		ft = functionchain.NewFunctionTable()
-		lt.Tables[libName] = ft
+		return false
 	}
-	functionTable := ft.(*functionchain.FunctionTable)
-	if functionTable.RootChain == nil {
-		functionTable.RootChain = functionchain.NewFunctionChain()
+
+	fc, ok := ft.AddIfAbsent()
+	if !ok {
+		return false
 	}
-	header := functionTable.RootChain
-	for index := 0; index < len(handler)-1; index++ {
-		header.Add(funcName, version, handler[index])
-		fc := header.(*functionchain.FunctionChain)
-		if fc.NextRouted == nil {
-			fc.NextRouted = functionchain.NewFunctionChain()
+
+	header := fc.(*functionchain.FunctionChain)
+	for header.NextRouted != nil {
+		header = header.NextRouted.(*functionchain.FunctionChain)
+	}
+	if len(hs) > 0 {
+		header.NextRouted = functionchain.NewFunctionChain()
+		header = header.NextRouted.(*functionchain.FunctionChain)
+	}
+	for index := 0; index < len(hs)-1; index++ {
+		header.Add(funcName, version, handler.NewHandler(hs[index]))
+		if header.NextRouted == nil {
+			header.NextRouted = functionchain.NewFunctionChain()
 		}
-		header = fc.NextRouted.(chain.IFunctionChain)
+		header = header.NextRouted.(*functionchain.FunctionChain)
 	}
-	if len(handler) > 1 {
-		header.Add(funcName, version, handler[len(handler)-1])
+	if len(hs) > 0 {
+		header.Add(funcName, version, handler.NewHandler(hs[len(hs)-1]))
+	}
+	return true
+}
+
+func (i *InvokerTable) SetUp(invokerName, libName, funcName, version string, hs ...func(reqId uint64, result any, params []any) (any, error)) bool {
+	temp, ok := i.AddIfAbsent(invokerName)
+	if !ok {
+		return false
+	}
+	lt := temp.(*LibTable)
+
+	ft, ok := lt.AddIfAbsent(libName)
+	if !ok {
+		return false
+	}
+
+	fc, ok := ft.AddIfAbsent()
+	if !ok {
+		return false
+	}
+
+	header := fc.(*functionchain.FunctionChain)
+	for index := 0; index < len(hs)-1; index++ {
+		header.Add(funcName, version, handler.NewHandler(hs[index]))
+		if header.NextRouted == nil {
+			header.NextRouted = functionchain.NewFunctionChain()
+		}
+		header = header.NextRouted.(*functionchain.FunctionChain)
+	}
+	if len(hs) > 0 {
+		header.Add(funcName, version, handler.NewHandler(hs[len(hs)-1]))
 	}
 	return true
 }

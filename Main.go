@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"goinvoker/chain/functionchain"
 	"goinvoker/chain/table"
-	"goinvoker/core/handler"
 )
 
 func main() {
@@ -13,65 +12,27 @@ func main() {
 
 func testSetup() {
 	invokerTable := table.NewInvokerTable()
-	invokerTable.SetUp("add", "addLib", "addFunc", "0.1.0", handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
-		if !valid(params[0].(int), params[1].(int)) {
-			fmt.Println("error")
-		}
-		functionchain.DispatchId(reqId)
-		return 0, nil
-	}),
-		handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
-			return add(params[0].(int), params[1].(int)), nil
-		}),
-	)
+	invokerTable.SetUp("add", "addLib", "addFunc", "1.1.0", valid)
 
-	invokerTable.SetUp("add", "addLib", "addFunc", "1.1.0", handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
-		if !valid(params[0].(int), params[1].(int)) {
-			fmt.Println("error1")
-		}
-		functionchain.DispatchId(reqId)
-		return 0, nil
-	}),
-		handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
-			return add(params[0].(int), params[1].(int)) - 10, nil
-		}),
-	)
-	call, b, err := invokerTable.Call("add", "addLib", "addFunc", "0.0.0", 1, -2)
+	invokerTable.SetUpAppend("add", "addLib", "addFunc", "1.1.0", add)
+	call, b, err := invokerTable.Call("add", "addLib", "addFunc", "1.2.0", 1, 2)
 	fmt.Println(call, b, err)
 }
 
-func testFunctionChain() {
-	validChain := functionchain.NewFunctionChain()
-	addChain := functionchain.NewFunctionChain()
-	addTable := functionchain.NewFunctionTable()
-	addLib := table.NewLibTable()
-	addInvoker := table.NewInvokerTable()
-	validChain.Add("add", "1.0.0", handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
-		if !valid(params[0].(int), params[1].(int)) {
-			fmt.Println("error")
-		}
-		functionchain.DispatchId(reqId)
-		return 0, nil
-	}))
-	addChain.Add("add", "0.2.0", handler.NewHandler(func(reqId uint64, result any, params []any) (any, error) {
-		return add(params[0].(int), params[1].(int)), nil
-	}))
-	validChain.NextRouted = addChain
-	addTable.RootChain = validChain
-	addLib.Add("add", addTable)
-	addInvoker.Add("add", addLib)
-	call, b, err := addInvoker.Call("add", "add", "add", "0.1.0", 1, -2)
-	fmt.Println(call, b, err)
-}
+func valid(reqId uint64, result any, params []any) (any, error) {
+	a := params[0].(int)
+	b := params[1].(int)
 
-func valid(a, b int) bool {
 	if a < 0 || b < 0 {
-		return false
-	} else {
-		return true
+		fmt.Println("error")
 	}
+	functionchain.DispatchId(reqId)
+	return 2, nil
 }
 
-func add(a, b int) int {
-	return a + b
+func add(reqId uint64, result any, params []any) (any, error) {
+	a := params[0].(int)
+	b := params[1].(int)
+	functionchain.DispatchIdRP(reqId, nil, 2*params[0].(int), 2*params[1].(int))
+	return a + b + result.(int), nil
 }

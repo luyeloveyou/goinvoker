@@ -39,14 +39,14 @@ func (f *FunctionChain) Add(funcName, version string, handler core.IHandler) boo
 	return true
 }
 
-func DispatchIdRP(reqId uint64, result any, params []any) {
+func DispatchIdRP(reqId uint64, result any, params ...any) {
 	coordinator.Dispatch(reqId, nil, result, params)
 }
 
 func DispatchIdR(reqId uint64, result any) {
-	DispatchIdRP(reqId, result, nil)
+	coordinator.Dispatch(reqId, nil, result, nil)
 }
 
 func DispatchId(reqId uint64) {
-	DispatchIdR(reqId, nil)
+	coordinator.Dispatch(reqId, nil, nil, nil)
 }

@@ -18,3 +18,10 @@ func (f *FunctionTable) Chain() (chain.IFunctionChain, bool) {
 	}
 	return f.RootChain, true
 }
+
+func (f *FunctionTable) AddIfAbsent() (chain.IFunctionChain, bool) {
+	if f.RootChain == nil {
+		f.RootChain = NewFunctionChain()
+	}
+	return f.RootChain, true
+}

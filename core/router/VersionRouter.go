@@ -15,13 +15,16 @@ func NewVersionRouter() *VersionRouter {
 }
 
 func (vr *VersionRouter) Add(selector string, routed any) bool {
-	vr.keys = append(vr.keys, selector)
-	sort.Slice(vr.keys, func(i, j int) bool {
-		if versionCompare(vr.keys[i], vr.keys[j]) >= 0 {
-			return true
-		}
-		return false
-	})
+	index := sort.SearchStrings(vr.keys, selector)
+	if index == len(vr.keys) {
+		vr.keys = append(vr.keys, selector)
+		sort.Slice(vr.keys, func(i, j int) bool {
+			if versionCompare(vr.keys[i], vr.keys[j]) >= 0 {
+				return true
+			}
+			return false
+		})
+	}
 	vr.cache[selector] = routed
 	return true
 }

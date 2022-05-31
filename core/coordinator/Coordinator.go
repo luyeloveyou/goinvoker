@@ -43,7 +43,10 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 	if retErr != nil {
 		return
 	}
-	if dispatchContext.GetDispatch(reqId) && c.CanDispatch() || !retInvoked {
+	if !c.CanDispatch() {
+		dispatchContext.Clear(reqId)
+	}
+	if dispatchContext.GetDispatch(reqId) || !retInvoked {
 		if dispatchContext.GetResult(reqId) != nil {
 			retResult = dispatchContext.GetResult(reqId)
 		}

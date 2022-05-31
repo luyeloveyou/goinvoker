@@ -2,6 +2,7 @@ package table
 
 import (
 	"goinvoker/chain"
+	"goinvoker/chain/functionchain"
 	"goinvoker/core/coordinator"
 	"goinvoker/core/router"
 )
@@ -37,4 +38,16 @@ func (t *LibTable) Add(lib string, table chain.IFunctionTable) bool {
 	}
 	t.Tables[lib] = table
 	return true
+}
+
+func (t *LibTable) AddIfAbsent(lib string) (chain.IFunctionTable, bool) {
+	if t.Tables == nil {
+		return nil, false
+	}
+	ft, ok := t.Tables[lib]
+	if !ok {
+		ft = functionchain.NewFunctionTable()
+		t.Tables[lib] = ft
+	}
+	return ft, true
 }
