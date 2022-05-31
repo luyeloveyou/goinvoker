@@ -1,42 +1,42 @@
 package functionchain
 
 import (
-	"fmt"
 	"goinvoker/core"
 	"goinvoker/core/coordinator"
 	"goinvoker/core/router"
 )
 
-type FunctionChain struct {
+type functionChain struct {
 	*coordinator.Coordinator
 }
 
-func NewFunctionChain() *FunctionChain {
-	functionChain := &FunctionChain{
+func NewFunctionChain() *functionChain {
+	functionChain := &functionChain{
 		Coordinator: coordinator.NewCoordinator(),
 	}
 	functionChain.RootRouted = router.NewNameRouter()
 	return functionChain
 }
 
-func (f *FunctionChain) Add(funcName, version string, handler core.IHandler) {
+func (f *functionChain) Add(funcName, version string, handler core.IHandler) bool {
 	if f.RootRouted == nil {
-		panic("根路由不能为nil")
+		return false
 	}
 	nameRouter, ok := f.RootRouted.(*router.NameRouter)
 	if !ok {
-		panic(fmt.Sprintf("根路由器类型 %T 不是名称路由器", f.RootRouted))
+		return false
 	}
-	routed := nameRouter.Route(funcName)
+	routed, _ := nameRouter.Route(funcName)
 	if routed == nil {
 		routed = router.NewVersionRouter()
 		nameRouter.Add(funcName, routed)
 	}
 	versionRouter, ok := routed.(*router.VersionRouter)
 	if !ok {
-		panic(fmt.Sprintf("名称路由器的路由结果类型 %T 不是版本路由器", routed))
+		return false
 	}
 	versionRouter.Add(version, handler)
+	return true
 }
 
 func DispatchIdRP(reqId uint64, result any, params []any) {

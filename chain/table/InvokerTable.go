@@ -1,34 +1,34 @@
 package table
 
 import (
-	"fmt"
 	"goinvoker/chain"
 	"goinvoker/core"
 	"goinvoker/core/coordinator"
 	"goinvoker/core/router"
 )
 
-type InvokerTable struct {
+type invokerTable struct {
 	*coordinator.Coordinator
 }
 
-func NewInvokerTable() *InvokerTable {
-	invokerTable := &InvokerTable{coordinator.NewCoordinator()}
+func NewInvokerTable() *invokerTable {
+	invokerTable := &invokerTable{coordinator.NewCoordinator()}
 	invokerTable.RootRouted = router.NewNameRouter()
 	return invokerTable
 }
 
-func (i *InvokerTable) Add(invokerName string, table chain.ILibTable) {
+func (i *invokerTable) Add(invokerName string, table chain.ILibTable) bool {
 	if i.RootRouted == nil {
-		panic("根路由不能为空")
+		return false
 	}
 	nameRouter, ok := i.RootRouted.(core.IRouter)
 	if !ok {
-		panic(fmt.Sprintf("根路由不是路由类型: %T", i.RootRouted))
+		return false
 	}
 	nameRouter.Add(invokerName, table)
+	return true
 }
 
-func (i *InvokerTable) Call(invokerName, libName, funcName, version string, params ...any) any {
+func (i *invokerTable) Call(invokerName, libName, funcName, version string, params ...any) (any, bool, error) {
 	return i.Invoke(0, []string{invokerName, libName, funcName, version}, nil, params)
 }

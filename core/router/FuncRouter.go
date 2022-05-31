@@ -1,27 +1,24 @@
 package router
 
 type FuncRouter struct {
-	RouteFunc func(selector string) any
-	AddFunc   func(selector string, routed any)
+	RouteFunc func(selector string) (any, bool)
+	AddFunc   func(selector string, routed any) bool
 }
 
-func NewFuncRouter(route func(selector string) any, add func(selector string, routed any)) *FuncRouter {
-	return &FuncRouter{
-		RouteFunc: route,
-		AddFunc:   add,
-	}
+func NewFuncRouter(routeFunc func(selector string) (any, bool), addFunc func(selector string, routed any) bool) *FuncRouter {
+	return &FuncRouter{RouteFunc: routeFunc, AddFunc: addFunc}
 }
 
-func (f *FuncRouter) Route(selector string) any {
+func (f *FuncRouter) Route(selector string) (any, bool) {
 	if f.RouteFunc == nil {
-		return nil
+		return nil, false
 	}
 	return f.RouteFunc(selector)
 }
 
-func (f *FuncRouter) Add(selector string, routed any) {
+func (f *FuncRouter) Add(selector string, routed any) bool {
 	if f.AddFunc == nil {
-		return
+		return false
 	}
-	f.AddFunc(selector, routed)
+	return f.AddFunc(selector, routed)
 }

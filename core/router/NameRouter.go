@@ -8,10 +8,12 @@ func NewNameRouter() *NameRouter {
 	return &NameRouter{cache: make(map[string]any)}
 }
 
-func (r *NameRouter) Route(selector string) any {
-	return r.cache[selector]
+func (r *NameRouter) Route(selector string) (any, bool) {
+	v, ok := r.cache[selector]
+	return v, ok
 }
 
-func (r *NameRouter) Add(selector string, routed any) {
+func (r *NameRouter) Add(selector string, routed any) bool {
 	r.cache[selector] = routed
+	return true
 }

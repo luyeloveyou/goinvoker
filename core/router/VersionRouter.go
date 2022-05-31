@@ -14,7 +14,7 @@ func NewVersionRouter() *VersionRouter {
 	}
 }
 
-func (vr *VersionRouter) Add(selector string, routed any) {
+func (vr *VersionRouter) Add(selector string, routed any) bool {
 	vr.keys = append(vr.keys, selector)
 	sort.Slice(vr.keys, func(i, j int) bool {
 		if versionCompare(vr.keys[i], vr.keys[j]) < 0 {
@@ -23,14 +23,16 @@ func (vr *VersionRouter) Add(selector string, routed any) {
 		return false
 	})
 	vr.cache[selector] = routed
+	return true
 }
 
-func (vr *VersionRouter) Route(selector string) any {
+func (vr *VersionRouter) Route(selector string) (any, bool) {
 	search := sort.Search(len(vr.keys), func(i int) bool {
 		return versionCompare(vr.keys[i], selector) >= 0
 	}) - 1
 	if search < 0 || search > len(vr.keys) {
-		return nil
+		return nil, false
 	}
-	return vr.cache[vr.keys[search]]
+	v, ok := vr.cache[vr.keys[search]]
+	return v, ok
 }
