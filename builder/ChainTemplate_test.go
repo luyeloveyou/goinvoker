@@ -14,12 +14,14 @@ func TestTemplate(t *testing.T) {
 		return 1, nil
 	}))
 	clone.Append(HandlerHelper(func(id uint64, result any, params []any) (any, error) {
+		panic("hello error")
 		return 2, nil
 	}))
 	invokerTable.Fill("invoker", "lib", functionChain, clone)
 	invokerTable.Build()
 	invoke, _, err := invokerTable.Coordinator().Invoke(0, []string{"invoker", "lib", "func", "0.0.0"}, nil, nil)
 	if err != nil {
+		fmt.Println(err)
 		return
 	}
 	fmt.Println(invoke)

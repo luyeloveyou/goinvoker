@@ -29,6 +29,18 @@ func (c *Coordinator) CanDispatch() bool {
 }
 
 func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, params []any) (retResult any, retInvoked bool, retErr error) {
+	defer func() {
+		if e := recover(); e != nil {
+			switch v := e.(type) {
+			case string:
+				retErr = fmt.Errorf(v)
+			case error:
+				retErr = v
+			default:
+				fmt.Println(v)
+			}
+		}
+	}()
 	if c.RootRouted == nil {
 		retResult = nil
 		retInvoked = false

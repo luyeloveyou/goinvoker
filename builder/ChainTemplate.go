@@ -5,7 +5,6 @@ import (
 	"github.com/luyeloveyou/goinvoker/core/coordinator"
 	"github.com/luyeloveyou/goinvoker/core/handler"
 	"github.com/luyeloveyou/goinvoker/core/router"
-	"strings"
 )
 
 const (
@@ -28,13 +27,12 @@ type IChainTemplate interface {
 	Clone() IChainTemplate
 	Clear() IChainTemplate
 	Description() []rune
-	Path() string
+	Elem() []any
 }
 
 type ChainTemplate struct {
 	StructDes []rune
-	Paths     string
-	Handlers  []func(uint64, any, []any) (any, error)
+	Element   []any
 	nodeH     []*coordinator.Coordinator
 	lock      bool
 }
@@ -42,8 +40,7 @@ type ChainTemplate struct {
 func NewChainTemplate() *ChainTemplate {
 	return &ChainTemplate{
 		StructDes: []rune{},
-		Paths:     "",
-		Handlers:  make([]func(uint64, any, []any) (any, error), 0, 4),
+		Element:   []any{},
 		nodeH:     make([]*coordinator.Coordinator, 0, 4),
 		lock:      false,
 	}
@@ -87,56 +84,35 @@ func (c *ChainTemplate) Handle() IChainTemplate {
 func (c *ChainTemplate) Clone() IChainTemplate {
 	ret := NewChainTemplate()
 	ret.StructDes = c.StructDes
-	ret.Paths = c.Paths
-	for _, handler := range c.Handlers {
-		ret.Handlers = append(ret.Handlers, handler)
-	}
+	ret.Element = make([]any, len(c.Element), cap(c.Element))
+	copy(ret.Element, c.Element)
 	return ret
 }
 
 func (c *ChainTemplate) Fill(ele ...any) IChainTemplate {
-	c.lock = true
-	path := make([]string, 0, 4)
-	c.Handlers = append([]func(uint64, any, []any) (any, error){})
-	for _, e := range ele {
-		switch v := e.(type) {
-		case string:
-			path = append(path, v)
-		case func(uint64, any, []any) (any, error):
-			c.Handlers = append(c.Handlers, v)
-		case IChainTemplate:
-			t := v.(*ChainTemplate)
-			path = append(path, strings.Split(t.Paths, "|")...)
-			c.Handlers = append(c.Handlers, t.Handlers...)
-		}
-	}
-	c.Paths = strings.Join(path, "|")
-	return c
+	c.Element = []any{}
+	return c.Append(ele...)
 }
 
 func (c *ChainTemplate) Append(ele ...any) IChainTemplate {
 	c.lock = true
-	path := []string{c.Paths}
 	for _, e := range ele {
 		switch v := e.(type) {
 		case string:
-			path = append(path, v)
+			c.Element = append(c.Element, v)
 		case func(uint64, any, []any) (any, error):
-			c.Handlers = append(c.Handlers, v)
+			c.Element = append(c.Element, v)
 		case IChainTemplate:
 			t := v.(*ChainTemplate)
-			path = append(path, strings.Split(t.Paths, "|")...)
-			c.Handlers = append(c.Handlers, t.Handlers...)
+			c.Element = append(c.Element, t.Element...)
 		}
 	}
-	c.Paths = strings.Join(path, "|")
 	return c
 }
 
 func (c *ChainTemplate) Clear() IChainTemplate {
 	c.StructDes = []rune{}
-	c.Paths = ""
-	c.Handlers = []func(uint64, any, []any) (any, error){}
+	c.Element = []any{}
 	c.nodeH = []*coordinator.Coordinator{}
 	c.lock = false
 	return c
@@ -144,14 +120,12 @@ func (c *ChainTemplate) Clear() IChainTemplate {
 
 func (c *ChainTemplate) Build() {
 	var (
-		path         = strings.Split(c.Paths, "|")
-		pathIndex    = 0
-		handlerIndex = 0
-		level        = 0
-		currentNode  = make(map[int]any)
-		value        any
-		ok           bool
-		nr           any
+		index       = 0
+		level       = 0
+		currentNode = make(map[int]any)
+		value       any
+		ok          bool
+		nr          any
 	)
 
 	helper := func(supply func() any) {
@@ -173,15 +147,15 @@ func (c *ChainTemplate) Build() {
 			case core.IRouter:
 				switch vr := r.(type) {
 				case *router.VersionRouter:
-					nr, ok = vr.Has(path[pathIndex])
+					nr, ok = vr.Has(c.Element[index].(string))
 				default:
-					nr, ok = r.Route(path[pathIndex])
+					nr, ok = r.Route(c.Element[index].(string))
 				}
 				if !ok {
 					nr = supply()
-					r.Add(path[pathIndex], nr)
+					r.Add(c.Element[index].(string), nr)
 				}
-				pathIndex++
+				index++
 			case core.IHandler:
 				nr, ok = r.Next()
 				if !ok {
@@ -213,9 +187,9 @@ func (c *ChainTemplate) Build() {
 			})
 		case Handler:
 			helper(func() any {
-				handlerIndex++
-				return handler.NewHandler(c.Handlers[handlerIndex-1])
+				return handler.NewHandler(c.Element[index+1].(func(uint64, any, []any) (any, error)))
 			})
+			index++
 		case LP:
 			helper(func() any {
 				return coordinator.NewCoordinator()
@@ -244,8 +218,8 @@ func (c *ChainTemplate) Description() []rune {
 	return c.StructDes
 }
 
-func (c *ChainTemplate) Path() string {
-	return c.Paths
+func (c *ChainTemplate) Elem() []any {
+	return c.Element
 }
 
 func HandlerHelper(h func(id uint64, result any, params []any) (any, error)) func(uint64, any, []any) (any, error) {
