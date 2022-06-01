@@ -39,3 +39,8 @@ func (vr *VersionRouter) Route(selector string) (any, bool) {
 	v, ok := vr.cache[vr.keys[search]]
 	return v, ok
 }
+
+func (vr *VersionRouter) Has(selector string) (any, bool) {
+	v, ok := vr.cache[selector]
+	return v, ok
+}

@@ -38,15 +38,14 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 	if reqId == 0 {
 		rand.Seed(time.Now().Unix())
 		reqId = rand.Uint64()
+		defer dispatchContext.Clear(reqId)
 	}
+	dispatchContext.SetDispatch(reqId, true)
 	retResult, retInvoked, retErr = helper(c.RootRouted, reqId, selectors, result, params)
 	if retErr != nil {
 		return
 	}
-	if !c.CanDispatch() {
-		dispatchContext.Clear(reqId)
-	}
-	if dispatchContext.GetDispatch(reqId) || !retInvoked {
+	if dispatchContext.GetDispatch(reqId) && c.CanDispatch() || !retInvoked {
 		if dispatchContext.GetResult(reqId) != nil {
 			retResult = dispatchContext.GetResult(reqId)
 		}
@@ -58,7 +57,6 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 		if p == nil {
 			p = params
 		}
-		dispatchContext.Clear(reqId)
 		next, _ := c.Next()
 		tempResult, isInvoked, err := helper(next, reqId, s, retResult, p)
 		if !retInvoked {
@@ -78,6 +76,10 @@ func Dispatch(reqId uint64, selectors []string, result any, params []any) {
 	dispatchContext.SetSelector(reqId, selectors)
 	dispatchContext.SetParams(reqId, params)
 	dispatchContext.SetResult(reqId, result)
+}
+
+func Block(reqId uint64) {
+	dispatchContext.Clear(reqId)
 }
 
 func helper(routed any, reqId uint64, selectors []string, result any, params []any) (retResult any, retInvoked bool, retErr error) {
