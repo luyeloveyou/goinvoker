@@ -42,11 +42,13 @@ func TestChainTemplate_Build(t *testing.T) {
 
 func TestChainCompile_Compile(t *testing.T) {
 	fc := NewChainTemplate().Name().Version().Handle()
-	lib := NewChainTemplate().Name().Handle().Next(fc).Next(fc)
+	lib := NewChainTemplate().Name().Handle().Next(fc, -1)
+	invoker := NewChainTemplate().Name().Handle().Next(lib, 1)
 
 	rc := NewChainCompile(fc.Clone())
 	c1 := NewChainCompile(fc.Clone())
 	lt := NewChainCompile(lib.Clone())
+	it := NewChainCompile(invoker.Clone())
 	ct := NewChainCompile(fc.Clone())
 
 	ct.Name("func").Version("0.0.0")
@@ -59,11 +61,22 @@ func TestChainCompile_Compile(t *testing.T) {
 		return 2, nil
 	})
 	lt.Name("lib").Handle(func(id uint64, result any, params []any) (any, error) {
-		fmt.Println("拦截器")
-		return 500, nil
-	}).Next(rc).Next(c1).Compile()
+		fmt.Println("lib拦截器")
+		return result, nil
+	}).Next(rc).Next(c1)
+	it.Name("invoker").Handle(func(id uint64, result any, params []any) (any, error) {
+		fmt.Println("invoker拦截器")
+		return 600, nil
+	}).Next(lt).Compile()
 
-	caller := lt.Result()
-	fmt.Println(caller.Path("lib", "func", "0.0.0").Params(1, 2, 3).Call())
-	fmt.Println(string(lib.Description()))
+	caller := it.Result()
+	fmt.Println(caller.Path("invoker", "lib", "func", "0.0.0").Params(1, 2, 3).Call())
+	fmt.Println(string(invoker.Description()))
+}
+
+func TestNewChainCompile(t *testing.T) {
+	fc := NewChainTemplate().Name().Version().Handle()
+	lib := NewChainTemplate().Name().Handle().Next(fc, -1)
+	lt := NewChainCompile(lib.Clone())
+	fmt.Printf("%#v\n", lt)
 }

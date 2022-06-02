@@ -6,6 +6,7 @@ type IRouted interface {
 
 type IRouter interface {
 	Route(selector string) (any, bool)
+	Has(selector string) (any, bool)
 	Add(selector string, routed any) bool
 }
 

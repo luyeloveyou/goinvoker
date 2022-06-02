@@ -22,3 +22,7 @@ func (f *FuncRouter) Add(selector string, routed any) bool {
 	}
 	return f.AddFunc(selector, routed)
 }
+
+func (f *FuncRouter) Has(selector string) (any, bool) {
+	return f.Route(selector)
+}

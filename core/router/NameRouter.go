@@ -17,3 +17,7 @@ func (r *NameRouter) Add(selector string, routed any) bool {
 	r.cache[selector] = routed
 	return true
 }
+
+func (r *NameRouter) Has(selector string) (any, bool) {
+	return r.Route(selector)
+}

@@ -11,6 +11,7 @@ const (
 	NameRouter    = 'N'
 	VersionRouter = 'V'
 	Handler       = 'H'
+	Infinite      = '*'
 	LP            = '('
 	RP            = ')'
 )
@@ -18,7 +19,7 @@ const (
 type ChainTemplate struct {
 	StructDes []rune
 	Element   []any
-	nodeH     []*coordinator.Coordinator
+	result    *coordinator.Coordinator
 	lock      bool
 }
 
@@ -26,7 +27,7 @@ func NewChainTemplate() *ChainTemplate {
 	return &ChainTemplate{
 		StructDes: []rune{},
 		Element:   []any{},
-		nodeH:     make([]*coordinator.Coordinator, 0, 4),
+		result:    nil,
 		lock:      false,
 	}
 }
@@ -47,14 +48,24 @@ func (c *ChainTemplate) Version() *ChainTemplate {
 	return c
 }
 
-func (c *ChainTemplate) Next(template *ChainTemplate) *ChainTemplate {
+func (c *ChainTemplate) Next(template *ChainTemplate, n int) *ChainTemplate {
 	if c.lock {
 		panic("已生成的模板不可修改")
 	}
-	description := template.Description()
-	c.StructDes = append(c.StructDes, LP)
-	c.StructDes = append(c.StructDes, description...)
-	c.StructDes = append(c.StructDes, RP)
+	if n > 0 {
+		for i := 0; i < n; i++ {
+			description := template.Description()
+			c.StructDes = append(c.StructDes, LP)
+			c.StructDes = append(c.StructDes, description...)
+			c.StructDes = append(c.StructDes, RP)
+		}
+	} else {
+		description := template.Description()
+		c.StructDes = append(c.StructDes, LP)
+		c.StructDes = append(c.StructDes, description...)
+		c.StructDes = append(c.StructDes, RP, Infinite)
+	}
+	c.lock = true
 	return c
 }
 
@@ -68,8 +79,9 @@ func (c *ChainTemplate) Handle() *ChainTemplate {
 
 func (c *ChainTemplate) Clone() *ChainTemplate {
 	ret := NewChainTemplate()
-	ret.StructDes = c.StructDes
+	ret.StructDes = make([]rune, len(c.StructDes), cap(c.StructDes))
 	ret.Element = make([]any, len(c.Element), cap(c.Element))
+	copy(ret.StructDes, c.StructDes)
 	copy(ret.Element, c.Element)
 	return ret
 }
@@ -97,49 +109,57 @@ func (c *ChainTemplate) Append(ele ...any) *ChainTemplate {
 func (c *ChainTemplate) Clear() *ChainTemplate {
 	c.StructDes = []rune{}
 	c.Element = []any{}
-	c.nodeH = []*coordinator.Coordinator{}
+	c.result = nil
 	c.lock = false
 	return c
 }
 
+type _stack struct {
+	node    *coordinator.Coordinator
+	current any
+}
+
 func (c *ChainTemplate) Build() {
 	var (
-		index       = 0
-		level       = 0
-		currentNode = make(map[int]any)
-		value       any
-		ok          bool
-		nr          any
+		desIndex   = 0
+		eleIndex   = 0
+		stackIndex = 0
+		ok         bool
+		nr         any
 	)
 
+	stack := make(map[int]*_stack)
+
+	newStack := func(init *coordinator.Coordinator) {
+		if init == nil {
+			init = coordinator.NewCoordinator()
+		}
+		stack[stackIndex] = &_stack{
+			node:    init,
+			current: init,
+		}
+	}
+
+	newStack(c.result)
+
 	helper := func(supply func() any) {
-		value, ok = currentNode[level]
-		if !ok {
-			if len(c.nodeH) <= level {
-				c.nodeH = append(c.nodeH, nil)
-			}
-			if c.nodeH[level] == nil {
-				c.nodeH[level] = coordinator.NewCoordinator()
-			}
-			nr = c.nodeH[level].RootRouted
+		s := stack[stackIndex]
+		if s.node == s.current {
+			nr = s.node.RootRouted
 			if nr == nil {
 				nr = supply()
-				c.nodeH[level].RootRouted = nr
+				s.node.RootRouted = nr
 			}
 		} else {
-			switch r := value.(type) {
+			switch r := s.current.(type) {
 			case core.IRouter:
-				switch vr := r.(type) {
-				case *router.VersionRouter:
-					nr, ok = vr.Has(c.Element[index].(string))
-				default:
-					nr, ok = r.Route(c.Element[index].(string))
-				}
+				selector := c.Element[eleIndex].(string)
+				nr, ok = r.Has(selector)
 				if !ok {
 					nr = supply()
-					r.Add(c.Element[index].(string), nr)
+					r.Add(selector, nr)
 				}
-				index++
+				eleIndex++
 			case core.IHandler:
 				nr, ok = r.Next()
 				if !ok {
@@ -156,10 +176,11 @@ func (c *ChainTemplate) Build() {
 				}
 			}
 		}
-		currentNode[level] = nr
+		s.current = nr
 	}
 
-	for _, des := range c.StructDes {
+	for eleIndex < len(c.Element) {
+		des := c.StructDes[desIndex]
 		switch des {
 		case NameRouter:
 			helper(func() any {
@@ -171,30 +192,35 @@ func (c *ChainTemplate) Build() {
 			})
 		case Handler:
 			helper(func() any {
-				return handler.NewHandler(c.Element[index+1].(func(uint64, any, []any) (any, error)))
+				return handler.NewHandler(c.Element[eleIndex+1].(func(uint64, any, []any) (any, error)))
 			})
-			index++
+			eleIndex++
 		case LP:
 			helper(func() any {
 				return coordinator.NewCoordinator()
 			})
-			if len(c.nodeH) <= level+1 {
-				c.nodeH = append(c.nodeH, nil)
-			}
-			c.nodeH[level+1] = currentNode[level].(*coordinator.Coordinator)
-			level++
+			stackIndex++
+			newStack(stack[stackIndex-1].current.(*coordinator.Coordinator))
 		case RP:
-			delete(currentNode, level)
-			c.nodeH[level] = nil
-			level--
+			delete(stack, stackIndex)
+			stackIndex--
+			if desIndex+1 < len(c.StructDes) && eleIndex < len(c.Element) && c.StructDes[desIndex+1] == Infinite {
+				for ; c.StructDes[desIndex] != LP; desIndex-- {
+				}
+				desIndex--
+			}
 		}
+		desIndex++
 	}
-	c.nodeH = []*coordinator.Coordinator{c.nodeH[0]}
+	c.result = stack[0].node
+	for i := 0; i < stackIndex; i++ {
+		delete(stack, stackIndex)
+	}
 }
 
 func (c *ChainTemplate) Result() *ChainCaller {
-	if len(c.nodeH) > 0 {
-		return NewChainCaller(c.nodeH[0])
+	if c.result != nil {
+		return NewChainCaller(c.result)
 	}
 	return nil
 }
