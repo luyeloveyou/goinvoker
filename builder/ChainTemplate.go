@@ -15,21 +15,6 @@ const (
 	RP            = ')'
 )
 
-type IChainTemplate interface {
-	Name() IChainTemplate
-	Version() IChainTemplate
-	Next(template IChainTemplate) IChainTemplate
-	Handle() IChainTemplate
-	Fill(ele ...any) IChainTemplate
-	Append(ele ...any) IChainTemplate
-	Build()
-	Coordinator() core.ICoordinator
-	Clone() IChainTemplate
-	Clear() IChainTemplate
-	Description() []rune
-	Elem() []any
-}
-
 type ChainTemplate struct {
 	StructDes []rune
 	Element   []any
@@ -46,7 +31,7 @@ func NewChainTemplate() *ChainTemplate {
 	}
 }
 
-func (c *ChainTemplate) Name() IChainTemplate {
+func (c *ChainTemplate) Name() *ChainTemplate {
 	if c.lock {
 		panic("已生成的模板不可修改")
 	}
@@ -54,7 +39,7 @@ func (c *ChainTemplate) Name() IChainTemplate {
 	return c
 }
 
-func (c *ChainTemplate) Version() IChainTemplate {
+func (c *ChainTemplate) Version() *ChainTemplate {
 	if c.lock {
 		panic("已生成的模板不可修改")
 	}
@@ -62,7 +47,7 @@ func (c *ChainTemplate) Version() IChainTemplate {
 	return c
 }
 
-func (c *ChainTemplate) Next(template IChainTemplate) IChainTemplate {
+func (c *ChainTemplate) Next(template *ChainTemplate) *ChainTemplate {
 	if c.lock {
 		panic("已生成的模板不可修改")
 	}
@@ -73,7 +58,7 @@ func (c *ChainTemplate) Next(template IChainTemplate) IChainTemplate {
 	return c
 }
 
-func (c *ChainTemplate) Handle() IChainTemplate {
+func (c *ChainTemplate) Handle() *ChainTemplate {
 	if c.lock {
 		panic("已生成的模板不可修改")
 	}
@@ -81,7 +66,7 @@ func (c *ChainTemplate) Handle() IChainTemplate {
 	return c
 }
 
-func (c *ChainTemplate) Clone() IChainTemplate {
+func (c *ChainTemplate) Clone() *ChainTemplate {
 	ret := NewChainTemplate()
 	ret.StructDes = c.StructDes
 	ret.Element = make([]any, len(c.Element), cap(c.Element))
@@ -89,12 +74,12 @@ func (c *ChainTemplate) Clone() IChainTemplate {
 	return ret
 }
 
-func (c *ChainTemplate) Fill(ele ...any) IChainTemplate {
+func (c *ChainTemplate) Fill(ele ...any) *ChainTemplate {
 	c.Element = []any{}
 	return c.Append(ele...)
 }
 
-func (c *ChainTemplate) Append(ele ...any) IChainTemplate {
+func (c *ChainTemplate) Append(ele ...any) *ChainTemplate {
 	c.lock = true
 	for _, e := range ele {
 		switch v := e.(type) {
@@ -102,15 +87,14 @@ func (c *ChainTemplate) Append(ele ...any) IChainTemplate {
 			c.Element = append(c.Element, v)
 		case func(uint64, any, []any) (any, error):
 			c.Element = append(c.Element, v)
-		case IChainTemplate:
-			t := v.(*ChainTemplate)
-			c.Element = append(c.Element, t.Element...)
+		case *ChainTemplate:
+			c.Element = append(c.Element, v.Element...)
 		}
 	}
 	return c
 }
 
-func (c *ChainTemplate) Clear() IChainTemplate {
+func (c *ChainTemplate) Clear() *ChainTemplate {
 	c.StructDes = []rune{}
 	c.Element = []any{}
 	c.nodeH = []*coordinator.Coordinator{}
@@ -205,11 +189,12 @@ func (c *ChainTemplate) Build() {
 			level--
 		}
 	}
+	c.nodeH = []*coordinator.Coordinator{c.nodeH[0]}
 }
 
-func (c *ChainTemplate) Coordinator() core.ICoordinator {
+func (c *ChainTemplate) Result() *ChainCaller {
 	if len(c.nodeH) > 0 {
-		return c.nodeH[0]
+		return NewChainCaller(c.nodeH[0])
 	}
 	return nil
 }

@@ -69,6 +69,8 @@ func (c *Coordinator) Invoke(reqId uint64, selectors []string, result any, param
 		if p == nil {
 			p = params
 		}
+		dispatchContext.SetSelector(reqId, nil)
+		dispatchContext.SetSelector(reqId, nil)
 		next, _ := c.Next()
 		tempResult, isInvoked, err := helper(next, reqId, s, retResult, p)
 		if !retInvoked {
@@ -123,7 +125,6 @@ func helper(routed any, reqId uint64, selectors []string, result any, params []a
 			}
 			retResult = tempResult
 			retInvoked = true
-			index = 0
 			routed, ok = r.Next()
 			if !ok {
 				return
