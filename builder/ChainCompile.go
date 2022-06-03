@@ -91,6 +91,7 @@ func (c *ChainCompile) Resolve(compile *ChainCompile) *ChainCompile {
 func (c *ChainCompile) Clear() *ChainCompile {
 	c.element = []any{}
 	c.index = 0
+	c.change = false
 	return c
 }
 
@@ -109,8 +110,12 @@ func (c *ChainCompile) Result() *ChainCaller {
 
 func (c *ChainCompile) helper(value any, token rune) *ChainCompile {
 	if c.index >= len(c.simpleDes) && !c.change {
-		c.change = true
-		c.index = 0
+		if len(c.postfix) != 0 {
+			c.change = true
+			c.index = 0
+		} else {
+			panic("参数超过长度限制")
+		}
 	}
 	if c.change && c.postfix[c.index%len(c.postfix)] == token || !c.change && c.simpleDes[c.index] == token {
 		c.index++
