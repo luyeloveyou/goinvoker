@@ -62,10 +62,12 @@ func TestChainCompile_Compile(t *testing.T) {
 	})
 	lt.Name("lib").Handle(func(id uint64, result any, params []any) (any, error) {
 		fmt.Println("lib拦截器")
-		return result, nil
+		fmt.Println(id, result, params)
+		return 500, nil
 	}).Next(rc).Next(c1)
 	it.Name("invoker").Handle(func(id uint64, result any, params []any) (any, error) {
 		fmt.Println("invoker拦截器")
+		fmt.Println(id, result, params)
 		return 600, nil
 	}).Next(lt).Compile()
 
